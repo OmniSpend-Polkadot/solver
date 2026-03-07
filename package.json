@@ -1,0 +1,21 @@
+{
+    "name": "omnispend-solver-bots",
+    "version": "1.0.0",
+    "description": "OmniSpend Mock Solver Bots for hackathon demo",
+    "scripts": {
+        "bot-red": "npx tsx bot-red.ts",
+        "bot-blue": "npx tsx bot-blue.ts",
+        "demo": "concurrently \"npm run bot-red\" \"npm run bot-blue\""
+    },
+    "dependencies": {
+        "dotenv": "^17.3.1",
+        "ethers": "^6.16.0",
+        "socket.io-client": "^4.8.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.3.3",
+        "concurrently": "^9.0.0",
+        "tsx": "^4.19.0",
+        "typescript": "^5.6.0"
+    }
+}
