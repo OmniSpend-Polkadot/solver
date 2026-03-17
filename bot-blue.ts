@@ -109,6 +109,13 @@ socket.on("execute_order", async (payload: any) => {
     console.log(`\n🎉🎉🎉 I WON THE AUCTION! 🎉🎉🎉`);
     console.log(`   Request: ${payload.requestId}`);
 
+    // Emit solver accepted status
+    socket.emit("intent_status", {
+        requestId: payload.requestId,
+        status: "solver_accepted",
+        message: "Solver accepted the order and is processing"
+    });
+
     if (!opSigner || !baseSigner || !paseoSigner) {
         console.log(`   [DRY-RUN] OriginSettler.openFor() & DestinationSettler.fillAggregated() mocked!`);
         return;
@@ -153,8 +160,25 @@ socket.on("execute_order", async (payload: any) => {
 
             const originTx = await originContract.openFor(order, signature, "0x");
             console.log(`   Tx Hash (Origin): ${originTx.hash}`);
+
+            // Emit origin escrow started status
+            socket.emit("intent_status", {
+                requestId: payload.requestId,
+                status: "origin_escrow_started",
+                message: `Opening escrow on ${originChainIdStr === "11155420" ? "OP Sepolia" : "Base Sepolia"}`,
+                txHash: originTx.hash
+            });
+
             await originTx.wait();
             console.log(`   ✅ Escrow secured on Origin!`);
+
+            // Emit origin escrow complete
+            socket.emit("intent_status", {
+                requestId: payload.requestId,
+                status: "origin_escrow_complete",
+                message: `Escrow secured on ${originChainIdStr === "11155420" ? "OP Sepolia" : "Base Sepolia"}`,
+                txHash: originTx.hash
+            });
 
             // Generate OrderId to match OriginSettler storage
             const orderIdBytes32 = ethers.keccak256(
@@ -223,15 +247,55 @@ socket.on("execute_order", async (payload: any) => {
         };
 
         // Submit to Destination (No msg.value, contract pulls USD.h automatically)
+
+        // Emit destination executing status
+        socket.emit("intent_status", {
+            requestId: payload.requestId,
+            status: "destination_executing",
+            message: "Executing on Polkadot Paseo...",
+        });
+
         const destTx = await destContract.fillAggregated(intent, originSettlers, sourceChains);
         console.log(`   Tx Hash (Paseo): ${destTx.hash}`);
+
+        // Emit with tx hash
+        socket.emit("intent_status", {
+            requestId: payload.requestId,
+            status: "destination_executing",
+            message: "Executing on Polkadot Paseo...",
+            txHash: destTx.hash
+        });
+
         await destTx.wait();
         console.log(`   🚀 ✅ INTENT FULFILLED SUCCESSFULLY ON POLKADOT PASEO!`);
+
+        // Emit success status
+        socket.emit("intent_status", {
+            requestId: payload.requestId,
+            status: "destination_success",
+            message: "NFT minted successfully on Polkadot!",
+            txHash: destTx.hash
+        });
+
+        // Emit completed status (final)
+        socket.emit("intent_status", {
+            requestId: payload.requestId,
+            status: "completed",
+            message: "Cross-chain payment completed!",
+            txHash: destTx.hash
+        });
 
         activeRfqs.delete(payload.requestId);
 
     } catch (err: any) {
         console.error(`   ❌ Execution failed:`, err);
+
+        // Emit failed status
+        socket.emit("intent_status", {
+            requestId: payload.requestId,
+            status: "destination_failed",
+            message: `Execution failed: ${err.message || "Unknown error"}`
+        });
     }
 });
 
