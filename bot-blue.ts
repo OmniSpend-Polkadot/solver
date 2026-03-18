@@ -13,7 +13,7 @@ dotenv.config();
 
 const AUCTIONEER_URL = process.env.AUCTIONEER_URL || "http://localhost:3001";
 const SOLVER_NAME = "🔵 Bot BLUE (On-Chain Executor)";
-const SOLVER_ADDRESS = process.env.SOLVER_ADDRESS || "0x6214e4E81a075c7CA6F4B5725eCd943D1C6b642C";
+const SOLVER_ADDRESS = process.env.SOLVER_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY; // <-- Using the same .env setup
 const BID_FEE = "0.3"; // USDC
 
